@@ -1,0 +1,13 @@
+{{define "content"}}
+    <h1>Welcome!</h1>
+    <p>This server provides an implementation of Wraith.</p>
+
+    <p>
+        If you have an account or would like to learn more about the game,
+        please authenticate using one of the service providers below.
+    </p>
+
+    <form action="/auth/login" method="post" style="border: 2px solid black; padding: 2ch;">
+        <input type="submit" name="provider" value="Google">
+    </form>
+{{end}}

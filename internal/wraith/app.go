@@ -7,8 +7,11 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/mdhender/wraithi/internal/config"
+	"github.com/mdhender/wraithi/internal/semver"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,30 +20,70 @@ import (
 )
 
 func NewApp(cfg *config.Config, db *sql.DB) (*App, error) {
+	if sb, err := os.Stat(cfg.App.Data); err != nil {
+		return nil, fmt.Errorf("data: %w", err)
+	} else if !sb.IsDir() {
+		return nil, fmt.Errorf("data: not a directory")
+	}
+	if sb, err := os.Stat(cfg.App.Public); err != nil {
+		return nil, fmt.Errorf("public: %w", err)
+	} else if !sb.IsDir() {
+		return nil, fmt.Errorf("public: not a directory")
+	}
+	if sb, err := os.Stat(cfg.App.Templates); err != nil {
+		return nil, fmt.Errorf("templates: %w", err)
+	} else if !sb.IsDir() {
+		return nil, fmt.Errorf("templates: not a directory")
+	}
+
 	ctx := context.Background()
 	a := &App{
 		context: ctx,
+		data:    cfg.App.Data,
 		db:      &DB{context: ctx, db: db},
+		public:  cfg.App.Public,
+		server: http.Server{
+			Addr:           net.JoinHostPort(cfg.Server.Host, cfg.Server.Port),
+			IdleTimeout:    cfg.Server.Timeout.Idle,
+			MaxHeaderBytes: cfg.Server.MaxHeaderBytes,
+			ReadTimeout:    cfg.Server.Timeout.Read,
+			WriteTimeout:   cfg.Server.Timeout.Write,
+		},
+		templates: cfg.App.Templates,
+		version:   semver.Version{Major: 0, Minor: 1, Patch: 0}.String(),
 	}
+
+	a.server.Handler = a.Routes()
+
 	return a, nil
 }
 
 type App struct {
-	context context.Context
-	db      *DB
 	server  http.Server
-	tls     struct {
+	cookies struct {
+		httpOnly bool
+		secure   bool
+	}
+	tls struct {
 		enabled  bool
 		certFile string
 		keyFile  string
 	}
+	context         context.Context
+	db              *DB
+	root            string
+	data            string // path to data files
+	public          string // path to public assets
+	templates       string // path to templates
+	timestampFormat string
+	version         string
 }
 
 // Run will run the receiver's embedded http.Server and gracefully handle receipt of SIGTERM or SIGINT.
 func (a *App) Run() error {
 	// start the server in a new go routine
 	go func(ctx context.Context) {
-		log.Printf("[app] server started\n")
+		log.Printf("[app] listening on %s\n", a.server.Addr)
 		if err := a.Serve(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic(err)
 		}

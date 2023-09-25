@@ -24,8 +24,10 @@ func main() {
 		log.Fatalf("main: %+v\n", err)
 	}
 
-	cfg := config.Default()
-	if err := cfg.Load(); err != nil {
+	cfg, err := config.Default()
+	if err != nil {
+		log.Fatal(err)
+	} else if err = cfg.Load(); err != nil {
 		log.Fatal(err)
 	}
 

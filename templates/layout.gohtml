@@ -1,0 +1,26 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wraith</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/open-fonts@1.1.1/fonts/inter.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.6" crossorigin="anonymous"></script>
+</head>
+<body>
+<header>
+    <h1>Wraith</h1>
+    {{template "navbar" .}}
+</header>
+
+<main>
+    {{template "content" .}}
+</main>
+
+<footer>
+    <p><a href="/">Home</a>・<a href="/login">Login</a>・<a href="/logout">Logout</a>・<a href="/version">Version</a></p>
+</footer>
+</body>
+</html>
+{{end}}

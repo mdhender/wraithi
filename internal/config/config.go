@@ -6,6 +6,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"github.com/mdhender/wraithi/internal/homedir"
 	"os"
 	"path/filepath"
 	"time"
@@ -29,11 +30,13 @@ type Config struct {
 	}
 	DB       DBConfig
 	FileName string
+	Home     string
 	Server   struct {
-		Scheme  string
-		Host    string
-		Port    string
-		Timeout struct {
+		Scheme         string
+		Host           string
+		MaxHeaderBytes int
+		Port           string
+		Timeout        struct {
 			Idle  time.Duration
 			Read  time.Duration
 			Write time.Duration
@@ -45,7 +48,7 @@ type Config struct {
 
 // Default returns a default configuration.
 // These are the values without loading the environment, configuration file, or command line.
-func Default() *Config {
+func Default() (*Config, error) {
 	var cfg Config
 	cfg.App.Root = "."
 	cfg.App.Data = filepath.Join(cfg.App.Root, "testdata")
@@ -53,15 +56,21 @@ func Default() *Config {
 	cfg.App.Templates = filepath.Join(cfg.App.Root, "templates")
 	cfg.App.TimestampFormat = "2006-01-02T15:04:05.99999999Z"
 	cfg.DB.Port = 3306
+	if home, err := homedir.Dir(); err != nil {
+		return nil, fmt.Errorf("home: %w", err)
+	} else {
+		cfg.Home = home
+	}
 	cfg.Server.Host = "localhost"
 	cfg.Server.Key = "hush.abba.hu$h"
+	cfg.Server.MaxHeaderBytes = 1_048_576 // 1mb
 	cfg.Server.Port = "3000"
 	cfg.Server.Salt = "nacl-clan"
 	cfg.Server.Scheme = "http"
 	cfg.Server.Timeout.Idle = 10 * time.Second
 	cfg.Server.Timeout.Read = 5 * time.Second
 	cfg.Server.Timeout.Write = 10 * time.Second
-	return &cfg
+	return &cfg, nil
 }
 
 // Load updates the values in a Config in this order:
@@ -80,7 +89,7 @@ func (cfg *Config) Load() error {
 	fs.DurationVar(&cfg.Server.Timeout.Read, "read-timeout", cfg.Server.Timeout.Read, "http read timeout")
 	fs.DurationVar(&cfg.Server.Timeout.Write, "write-timeout", cfg.Server.Timeout.Write, "http write timeout")
 	fs.IntVar(&cfg.DB.Port, "db-port", cfg.DB.Port, "port of mysql database")
-	fs.StringVar(&cfg.App.Data, "data-path", cfg.App.Data, "path containing data files")
+	fs.StringVar(&cfg.App.Data, "data", cfg.App.Data, "path to data files")
 	fs.StringVar(&cfg.App.Public, "public", cfg.App.Public, "path to serve web assets from")
 	fs.StringVar(&cfg.App.Root, "root", cfg.App.Root, "path to treat as root for relative file references")
 	fs.StringVar(&cfg.App.Templates, "templates", cfg.App.Templates, "path to template files")
