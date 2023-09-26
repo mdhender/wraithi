@@ -8,13 +8,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/mdhender/wraithi/internal/authn"
+	"github.com/mdhender/wraithi/internal/authn/google"
 	"github.com/mdhender/wraithi/internal/config"
+	"github.com/mdhender/wraithi/internal/nonces"
 	"github.com/mdhender/wraithi/internal/semver"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -53,6 +57,23 @@ func NewApp(cfg *config.Config, db *sql.DB) (*App, error) {
 		version:   semver.Version{Major: 0, Minor: 1, Patch: 0}.String(),
 	}
 
+	nonceTTL := 5 * time.Minute
+	for _, id := range strings.Split(cfg.Auth.Providers, ",") {
+		switch strings.TrimSpace(id) {
+		case "Facebook":
+			return nil, fmt.Errorf("provider: %q: %w", id, authn.ErrUnknownProvider)
+		case "GitHub":
+			return nil, fmt.Errorf("provider: %q: %w", id, authn.ErrUnknownProvider)
+		case "Google":
+			clientId := os.Getenv("WRAITH_GOOGLE_CLIENT_ID")
+			clientSecret := os.Getenv("WRAITH_GOOGLE_CLIENT_SECRET")
+			nf := nonces.NewFactory(nonceTTL)
+			a.authn = append(a.authn, google.Google(clientId, clientSecret, "http://localhost:8080/auth/callback/google", nf))
+		default:
+			return nil, fmt.Errorf("provider: %q: %w", id, authn.ErrUnknownProvider)
+		}
+	}
+
 	a.server.Handler = a.Routes()
 
 	return a, nil
@@ -69,6 +90,7 @@ type App struct {
 		certFile string
 		keyFile  string
 	}
+	authn           []authn.Provider
 	context         context.Context
 	db              *DB
 	root            string

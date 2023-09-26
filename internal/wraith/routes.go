@@ -22,5 +22,9 @@ func (a *App) Routes() http.Handler {
 	r.HandleFunc("GET", "/notFound", a.notFound)
 	r.HandleFunc("GET", "/version", a.getVersion)
 
+	// authorization routes
+	r.HandleFunc("GET", "/auth/callback/:provider", a.getAuthCallback)
+	r.HandleFunc("POST", "/auth/login", a.postAuthLogin)
+
 	return r
 }

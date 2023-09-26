@@ -24,6 +24,9 @@ type Config struct {
 		Templates       string // path to templates
 		TimestampFormat string
 	}
+	Auth struct {
+		Providers string // comma separated list of authentication providers
+	}
 	Cookies struct {
 		HttpOnly bool
 		Secure   bool
@@ -55,6 +58,7 @@ func Default() (*Config, error) {
 	cfg.App.Public = filepath.Join(cfg.App.Root, "web")
 	cfg.App.Templates = filepath.Join(cfg.App.Root, "templates")
 	cfg.App.TimestampFormat = "2006-01-02T15:04:05.99999999Z"
+	cfg.Auth.Providers = "Google"
 	cfg.DB.Port = 3306
 	if home, err := homedir.Dir(); err != nil {
 		return nil, fmt.Errorf("home: %w", err)
