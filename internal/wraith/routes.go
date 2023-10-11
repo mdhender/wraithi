@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func (a *App) Routes() http.Handler {
+func (a *App) routes() http.Handler {
 	r := way.NewRouter()
 
 	// public routes
@@ -25,6 +25,13 @@ func (a *App) Routes() http.Handler {
 	// authorization routes
 	r.HandleFunc("GET", "/auth/callback/:provider", a.getAuthCallback)
 	r.HandleFunc("POST", "/auth/login", a.postAuthLogin)
+
+	// protected routes
+	r.Handle("GET", "/admin/users", a.adminOnly(a.getUsers()))
+	r.Handle("GET", "/games", a.authOnly(a.getGames()))
+
+	// not found is also our assets server
+	r.NotFound = a.assetServer("", a.assets, false)
 
 	return r
 }

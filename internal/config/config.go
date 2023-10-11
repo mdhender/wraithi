@@ -19,7 +19,7 @@ type Config struct {
 	Debug bool
 	App   struct {
 		Data            string // path to data files
-		Public          string // path to public assets
+		Assets          string // path to public assets
 		Root            string
 		Templates       string // path to templates
 		TimestampFormat string
@@ -54,8 +54,8 @@ type Config struct {
 func Default() (*Config, error) {
 	var cfg Config
 	cfg.App.Root = "."
+	cfg.App.Assets = filepath.Join(cfg.App.Root, "web")
 	cfg.App.Data = filepath.Join(cfg.App.Root, "testdata")
-	cfg.App.Public = filepath.Join(cfg.App.Root, "web")
 	cfg.App.Templates = filepath.Join(cfg.App.Root, "templates")
 	cfg.App.TimestampFormat = "2006-01-02T15:04:05.99999999Z"
 	cfg.Auth.Providers = "Google"
@@ -93,8 +93,8 @@ func (cfg *Config) Load() error {
 	fs.DurationVar(&cfg.Server.Timeout.Read, "read-timeout", cfg.Server.Timeout.Read, "http read timeout")
 	fs.DurationVar(&cfg.Server.Timeout.Write, "write-timeout", cfg.Server.Timeout.Write, "http write timeout")
 	fs.IntVar(&cfg.DB.Port, "db-port", cfg.DB.Port, "port of mysql database")
+	fs.StringVar(&cfg.App.Assets, "assets", cfg.App.Assets, "path to serve web assets from")
 	fs.StringVar(&cfg.App.Data, "data", cfg.App.Data, "path to data files")
-	fs.StringVar(&cfg.App.Public, "public", cfg.App.Public, "path to serve web assets from")
 	fs.StringVar(&cfg.App.Root, "root", cfg.App.Root, "path to treat as root for relative file references")
 	fs.StringVar(&cfg.App.Templates, "templates", cfg.App.Templates, "path to template files")
 	fs.StringVar(&cfg.DB.Host, "db-host", cfg.DB.Host, "host of mysql database")
@@ -122,7 +122,7 @@ func (cfg *Config) Load() error {
 	if cfg.App.Data, err = filepath.Abs(cfg.App.Data); err != nil {
 		return fmt.Errorf("data: %w", err)
 	}
-	if cfg.App.Public, err = filepath.Abs(cfg.App.Public); err != nil {
+	if cfg.App.Assets, err = filepath.Abs(cfg.App.Assets); err != nil {
 		return fmt.Errorf("public: %w", err)
 	}
 	if cfg.App.Templates, err = filepath.Abs(cfg.App.Templates); err != nil {

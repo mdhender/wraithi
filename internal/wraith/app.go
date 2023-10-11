@@ -23,29 +23,15 @@ import (
 	"time"
 )
 
-func NewApp(cfg *config.Config, db *sql.DB) (*App, error) {
-	if sb, err := os.Stat(cfg.App.Data); err != nil {
-		return nil, fmt.Errorf("data: %w", err)
-	} else if !sb.IsDir() {
-		return nil, fmt.Errorf("data: not a directory")
-	}
-	if sb, err := os.Stat(cfg.App.Public); err != nil {
-		return nil, fmt.Errorf("public: %w", err)
-	} else if !sb.IsDir() {
-		return nil, fmt.Errorf("public: not a directory")
-	}
-	if sb, err := os.Stat(cfg.App.Templates); err != nil {
-		return nil, fmt.Errorf("templates: %w", err)
-	} else if !sb.IsDir() {
-		return nil, fmt.Errorf("templates: not a directory")
-	}
-
+func NewApp(cfg *config.Config, db *sql.DB, options ...Option) (*App, error) {
 	ctx := context.Background()
+
+	// create the application with default settings
 	a := &App{
+		assets:  cfg.App.Assets,
 		context: ctx,
 		data:    cfg.App.Data,
 		db:      &DB{context: ctx, db: db},
-		public:  cfg.App.Public,
 		server: http.Server{
 			Addr:           net.JoinHostPort(cfg.Server.Host, cfg.Server.Port),
 			IdleTimeout:    cfg.Server.Timeout.Idle,
@@ -56,6 +42,7 @@ func NewApp(cfg *config.Config, db *sql.DB) (*App, error) {
 		templates: cfg.App.Templates,
 		version:   semver.Version{Major: 0, Minor: 1, Patch: 0}.String(),
 	}
+	a.cookies.name = "wraith-session"
 
 	nonceTTL := 5 * time.Minute
 	for _, id := range strings.Split(cfg.Auth.Providers, ",") {
@@ -74,31 +61,66 @@ func NewApp(cfg *config.Config, db *sql.DB) (*App, error) {
 		}
 	}
 
-	a.server.Handler = a.Routes()
+	// options override default values, so apply them now
+	for _, option := range options {
+		if err := option(a); err != nil {
+			return nil, err
+		}
+	}
+
+	if sb, err := os.Stat(a.data); err != nil {
+		return nil, fmt.Errorf("data: %w", err)
+	} else if !sb.IsDir() {
+		return nil, fmt.Errorf("data: not a directory")
+	}
+	if sb, err := os.Stat(a.assets); err != nil {
+		return nil, fmt.Errorf("assets: %w", err)
+	} else if !sb.IsDir() {
+		return nil, fmt.Errorf("assets: not a directory")
+	}
+	if sb, err := os.Stat(a.templates); err != nil {
+		return nil, fmt.Errorf("templates: %w", err)
+	} else if !sb.IsDir() {
+		return nil, fmt.Errorf("templates: not a directory")
+	}
+
+	// create a handler for all the routes
+	h := a.routes()
+	// wrap it with some middleware
+	h = a.withUser(h)
+	// and save the handler
+	a.server.Handler = h
 
 	return a, nil
 }
 
 type App struct {
-	server  http.Server
 	cookies struct {
+		name     string
 		httpOnly bool
 		secure   bool
 	}
-	tls struct {
+	assets  string // path to public assets
+	authn   []authn.Provider
+	context context.Context
+	db      *DB
+	flags   struct {
+		log struct {
+			assets bool
+		}
+		spa bool
+	}
+	root            string
+	data            string // path to data files
+	server          http.Server
+	templates       string // path to templates
+	timestampFormat string
+	tls             struct {
 		enabled  bool
 		certFile string
 		keyFile  string
 	}
-	authn           []authn.Provider
-	context         context.Context
-	db              *DB
-	root            string
-	data            string // path to data files
-	public          string // path to public assets
-	templates       string // path to templates
-	timestampFormat string
-	version         string
+	version string
 }
 
 // Run will run the receiver's embedded http.Server and gracefully handle receipt of SIGTERM or SIGINT.

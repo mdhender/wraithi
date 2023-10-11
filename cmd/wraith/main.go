@@ -50,6 +50,12 @@ func run(cfg *config.Config) error {
 	}(db)
 	log.Printf("[main] connected to database\n")
 
+	var options []wraith.Option
+	options = append(options, wraith.WithAssetsLogging(true))
+	options = append(options, wraith.WithAssetsRoot(cfg.App.Root))
+	options = append(options, wraith.WithDB(db))
+	options = append(options, wraith.WithServeSPA(false))
+	options = append(options, wraith.WithTemplates(cfg.App.Templates))
 	app, err := wraith.NewApp(cfg, db)
 	if err != nil {
 		return err

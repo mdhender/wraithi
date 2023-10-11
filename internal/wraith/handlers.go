@@ -8,8 +8,104 @@ import (
 	"github.com/mdhender/wraithi/internal/way"
 	"log"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
 	"strings"
 )
+
+// assetServer tries to serve assets from the web root.
+// if not found, forwards to the normal not found handler.
+func (a *App) assetServer(prefix, root string, spa bool) http.HandlerFunc {
+	log.Printf("[assets] serving %q\n", root)
+	log.Println("[assets] initializing")
+	defer log.Println("[assets] initialized")
+
+	log.Printf("[assets] strip: %q\n", prefix)
+	log.Printf("[assets]  root: %q\n", root)
+
+	if sb, err := os.Stat(root); err != nil || !sb.IsDir() {
+		if err == nil {
+			err = fmt.Errorf("%q: is not a directory", root)
+		}
+		log.Printf("[assets] assets: %v\n", err)
+		return func(w http.ResponseWriter, r *http.Request) {
+			payload := struct {
+				Method string
+				URL    string
+				Error  error
+			}{
+				Method: r.Method,
+				URL:    r.URL.Path,
+				Error:  err,
+			}
+			a.render(w, r, payload, "layout", "navbar", "internal_error")
+		}
+	}
+
+	spaIndex := filepath.Join(root, "index.html")
+	if sb, err := os.Stat(spaIndex); err != nil || !sb.Mode().IsRegular() {
+		if err == nil {
+			err = fmt.Errorf("index.html is not a file")
+		}
+		log.Printf("[assets] spa: %v\n", err)
+		spaIndex = ""
+	} else {
+		log.Printf("[assets] spa: %q\n", spaIndex)
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		file := filepath.Join(root, path.Clean("/"+strings.TrimPrefix(r.URL.Path, prefix)))
+		if a.flags.log.assets {
+			log.Printf("[assets] %q\n", file)
+		}
+
+		sb, err := os.Stat(file)
+		if err != nil {
+			// try serving root index file for SPA routing instead
+			if a.flags.spa && spaIndex != "" {
+				if rdr, err := os.Open(spaIndex); err == nil {
+					defer rdr.Close()
+					http.ServeContent(w, r, file, sb.ModTime(), rdr)
+					return
+				}
+			}
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		// we never want to give a directory listing, so change raw directory request to fetch the index.html instead.
+		if sb.IsDir() {
+			file = filepath.Join(file, "index.html")
+			sb, err = os.Stat(file)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+		}
+
+		// only serve regular files (this avoids serving a directory named index.html)
+		if !sb.Mode().IsRegular() {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		// pretty sure that we have a regular file at this point.
+		rdr, err := os.Open(file)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		defer rdr.Close()
+
+		http.ServeContent(w, r, file, sb.ModTime(), rdr)
+	}
+}
 
 func (a *App) getAuthCallback(w http.ResponseWriter, r *http.Request) {
 	var provider authn.Provider
@@ -34,8 +130,20 @@ func (a *App) getAuthCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/users/%s", authorization.Id), http.StatusTemporaryRedirect)
 }
 
+func (a *App) getGames() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		a.render(w, r, nil, "layout", "navbar", "index")
+	}
+}
+
 func (a *App) getIndex(w http.ResponseWriter, r *http.Request) {
 	a.render(w, r, nil, "layout", "navbar", "index")
+}
+
+func (a *App) getUsers() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		a.render(w, r, nil, "layout", "navbar", "index")
+	}
 }
 
 func (a *App) getVersion(w http.ResponseWriter, r *http.Request) {
