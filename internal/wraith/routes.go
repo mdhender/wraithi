@@ -13,6 +13,9 @@ func (a *App) routes() http.Handler {
 
 	// public routes
 	r.HandleFunc("GET", "/", a.getIndex)
+	r.HandleFunc("GET", "/guest", a.getGuest)
+	r.HandleFunc("GET", "/welcome", a.getWelcome)
+
 	r.HandleFunc("GET", "/index.html", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	})

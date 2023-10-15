@@ -39,10 +39,15 @@ func NewApp(cfg *config.Config, db *sql.DB, options ...Option) (*App, error) {
 			ReadTimeout:    cfg.Server.Timeout.Read,
 			WriteTimeout:   cfg.Server.Timeout.Write,
 		},
-		templates: cfg.App.Templates,
-		version:   semver.Version{Major: 0, Minor: 1, Patch: 0}.String(),
 	}
 	a.cookies.name = "wraith-session"
+	a.templates.path = cfg.App.Templates
+	a.templates.site.Copyright.Year = "2023"
+	a.templates.site.Copyright.Author = "Michael D Henderson"
+	a.templates.site.NavBar = NavBarData{Links: []LinkData{LinkData{"Home", "/"}}}
+	a.templates.site.Title = "Wraith"
+	a.templates.site.UseOutliner = true
+	a.templates.site.Version = semver.Version{Major: 0, Minor: 1, Patch: 0}.String()
 
 	nonceTTL := 5 * time.Minute
 	for _, id := range strings.Split(cfg.Auth.Providers, ",") {
@@ -78,7 +83,7 @@ func NewApp(cfg *config.Config, db *sql.DB, options ...Option) (*App, error) {
 	} else if !sb.IsDir() {
 		return nil, fmt.Errorf("assets: not a directory")
 	}
-	if sb, err := os.Stat(a.templates); err != nil {
+	if sb, err := os.Stat(a.templates.path); err != nil {
 		return nil, fmt.Errorf("templates: %w", err)
 	} else if !sb.IsDir() {
 		return nil, fmt.Errorf("templates: not a directory")
@@ -110,10 +115,14 @@ type App struct {
 		}
 		spa bool
 	}
-	root            string
-	data            string // path to data files
-	server          http.Server
-	templates       string // path to templates
+	root      string
+	data      string // path to data files
+	server    http.Server
+	templates struct {
+		path   string // path to templates
+		site   SiteData
+		footer FooterData
+	}
 	timestampFormat string
 	tls             struct {
 		enabled  bool

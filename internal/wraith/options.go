@@ -45,7 +45,7 @@ func WithServeSPA(flag bool) Option {
 func WithTemplates(path string) Option {
 	templates, err := filepath.Abs(path)
 	return func(a *App) error {
-		a.templates = templates
+		a.templates.path = templates
 		return err
 	}
 }

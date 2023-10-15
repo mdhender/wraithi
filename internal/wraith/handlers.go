@@ -136,8 +136,16 @@ func (a *App) getGames() http.HandlerFunc {
 	}
 }
 
+func (a *App) getGuest(w http.ResponseWriter, r *http.Request) {
+	payload := Payload{Site: a.templates.site}
+	payload.Page.Title = "Guest"
+	a.render(w, r, payload, "layout", "navbar", "guest")
+}
+
 func (a *App) getIndex(w http.ResponseWriter, r *http.Request) {
-	a.render(w, r, nil, "layout", "navbar", "index")
+	payload := Payload{Site: a.templates.site}
+	payload.Page.Title = "Welcome"
+	a.render(w, r, payload, "layout", "navbar", "index")
 }
 
 func (a *App) getUsers() http.HandlerFunc {
@@ -153,6 +161,12 @@ func (a *App) getVersion(w http.ResponseWriter, r *http.Request) {
 		Version: a.version,
 	}
 	a.render(w, r, payload, "layout", "navbar", "version")
+}
+
+func (a *App) getWelcome(w http.ResponseWriter, r *http.Request) {
+	payload := Payload{Site: a.templates.site}
+	payload.Page.Title = "Welcome"
+	a.render(w, r, payload, "layout", "navbar", "welcome")
 }
 
 func (a *App) internalError(w http.ResponseWriter, r *http.Request, err error) {
