@@ -1,58 +1,12 @@
 {{define "layout"}}{{- /*gotype:github.com/mdhender/wraithi/internal/wraith.Payload*/ -}}<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Site.Title}}</title>
-    {{if .Site.UseCDN}}
-    <link rel="stylesheet" href="https://unpkg.com/missing.css@1.1.1">
-    <!--
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/open-fonts@1.1.1/fonts/inter.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
-    -->
-    {{else}}
-    <link rel="stylesheet" href="/css/missing-1.1.1.min.css">
-    <!--
-    <link rel="stylesheet" href="/fonts/inter-1.1.1.min.css">
-    <link rel="stylesheet" href="/css/new-1.1.2.min.css">
-    -->
-    {{end}}
-    {{if .Site.UseCDN}}
-    <script src="https://unpkg.com/htmx.org@1.9.6" crossorigin="anonymous"></script>
-    {{else}}
-    <script src="/js/htmx-1.9.6.min.js" crossorigin="anonymous"></script>
-    {{end}}
-    {{if .Site.UseOutliner}}
-    <style>
-        * { outline: 1px solid rgba(255,0,0,.2); :hover { outline: 1px solid rgba(255,0,0,0.6); } }
-        * * { outline: 1px solid rgba(0,255,0,.2); :hover { outline: 1px solid rgba(0,255,0,0.6); } }
-        * * * { outline: 1px solid rgba(0,0,255,.2); :hover { outline: 1px solid rgba(0,0,255,0.6); } }
-        * * * * { outline: 1px solid rgba(255,0,255,.2); :hover { outline: 1px solid rgba(255,0,0,0.6); } }
-        * * * * * { outline: 1px solid rgba(0,255,255,.2); :hover { outline: 1px solid rgba(0,255,0,0.6); } }
-        * * * * * * { outline: 1px solid rgba(255,255,0,.2); :hover { outline: 1px solid rgba(0,0,255,0.6); } }
-        * * * * * * * { outline: 1px solid rgba(255,0,0,.2); :hover { outline: 1px solid rgba(255,0,0,0.6); } }
-        * * * * * * * * { outline: 1px solid rgba(0,255,0,.2); :hover { outline: 1px solid rgba(0,255,0,0.6); } }
-        * * * * * * * * * { outline: 1px solid rgba(0,0,255,.2); :hover { outline: 1px solid rgba(0,0,255,0.6); } }
-    </style>
-    {{end}}
-</head>
-<body>
-<header>
-    <h1>{{.Site.Title}}</h1>
-    {{template "navbar" .Site.NavBar}}
-</header>
-
+{{template "head" .Site}}
+<body hx-boost="true">
+{{template "site_header" .Site}}
 <main>
-    {{template "content" .Page.Content}}
+    {{template "content" .Content}}
 </main>
-
-<footer>
-    <p>
-        <a href="/privacy">Privacy</a>
-        ・ <a href="/version">Version {{.Site.Version}}</a>
-        ・ Copyright &copy; {{.Site.Copyright.Year}} {{.Site.Copyright.Author}} - All rights reserved
-    </p>
-</footer>
+{{template "site_footer" .Site}}
 </body>
 </html>
 {{end}}

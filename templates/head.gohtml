@@ -1,0 +1,38 @@
+{{define "head"}}{{- /*gotype:github.com/mdhender/wraithi/internal/wraith.SiteData*/ -}}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    {{if .UseCDN}}
+        <link rel="stylesheet" href="https://unpkg.com/missing.css@1.1.1">
+        <!--
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/open-fonts@1.1.1/fonts/inter.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
+        -->
+    {{else}}
+        <link rel="stylesheet" href="/css/missing-1.1.1.min.css">
+        <!--
+        <link rel="stylesheet" href="/fonts/inter-1.1.1.min.css">
+        <link rel="stylesheet" href="/css/new-1.1.2.min.css">
+        -->
+    {{end}}
+    {{if .UseCDN}}
+    <script src="https://unpkg.com/htmx.org@1.9.6" crossorigin="anonymous"></script>
+    {{else}}
+    <script src="/js/htmx-1.9.6.min.js" crossorigin="anonymous"></script>
+    {{end}}
+    {{if .UseOutliner}}
+        <style>
+            * { outline: 1px solid rgba(255,0,0,.2); :hover { outline: 1px solid rgba(255,0,0,0.6); } }
+            * * { outline: 1px solid rgba(0,255,0,.2); :hover { outline: 1px solid rgba(0,255,0,0.6); } }
+            * * * { outline: 1px solid rgba(0,0,255,.2); :hover { outline: 1px solid rgba(0,0,255,0.6); } }
+            * * * * { outline: 1px solid rgba(255,0,255,.2); :hover { outline: 1px solid rgba(255,0,0,0.6); } }
+            * * * * * { outline: 1px solid rgba(0,255,255,.2); :hover { outline: 1px solid rgba(0,255,0,0.6); } }
+            * * * * * * { outline: 1px solid rgba(255,255,0,.2); :hover { outline: 1px solid rgba(0,0,255,0.6); } }
+            * * * * * * * { outline: 1px solid rgba(255,0,0,.2); :hover { outline: 1px solid rgba(255,0,0,0.6); } }
+            * * * * * * * * { outline: 1px solid rgba(0,255,0,.2); :hover { outline: 1px solid rgba(0,255,0,0.6); } }
+            * * * * * * * * * { outline: 1px solid rgba(0,0,255,.2); :hover { outline: 1px solid rgba(0,0,255,0.6); } }
+        </style>
+    {{end}}
+</head>
+{{end}}

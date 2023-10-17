@@ -1,0 +1,8 @@
+{{define "site_navbar"}}{{- /*gotype:github.com/mdhender/wraithi/internal/wraith.NavBarData*/ -}}
+<nav>
+    {{range $i, $e := .Links }}
+        {{if ne $i 0}}・{{end}}
+        <a href="{{.Url}}">{{.Text}}</a>
+    {{end}}
+</nav>
+{{end}}

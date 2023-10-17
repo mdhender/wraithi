@@ -1,4 +1,18 @@
-{{define "content"}}
-    <h1>Not Found</h1>
-    <p>{{.Method}} {{.URL}} was not found</p>
+{{define "content"}}{{- /*gotype:github.com/mdhender/wraithi/internal/wraith.Payload*/ -}}
+<h1>Not Found</h1>
+<p>
+    The requested resource does not exist on this server.
+</p>
+<div class="box plain">
+    <strong class="block titlebar">Request Details</strong>
+    <br>
+    <table>
+        <thead>
+        <tr><td>Method</td><td>Route</td></tr>
+        </thead>
+        <tbody>
+        <tr><td>{{.Method}}</td><td>{{.URL}}</td></tr>
+        </tbody>
+    </table>
+</div>
 {{end}}

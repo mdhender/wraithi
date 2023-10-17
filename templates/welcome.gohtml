@@ -1,14 +1,25 @@
 {{define "content"}}
     <h1>Welcome!</h1>
     <p>
-        You must be signed in to view documentation.
-        If you don't have a account, you may sign in as a guest.
-        That gives you a temporary pass to the site,
-        which will be saved to your browser as a cookie.
-        The cookie will be deleted when you close your browser.
+        Welcome to the Wraith game server!
     </p>
     <p>
-        If you have an account or would like to learn more about the game,
-        please authenticate using one of the service providers below.
+        Wraith is a strategic space exploration game
+        (commonly called a "4x" game)
+        where you're in command of a space-faring nation seeking to rule the galaxy!
     </p>
+    <p>
+        You control a single nation and can issue orders using a web form.
+    </p>
+    <p>
+        You can learn more by clicking the "Documentation" link in the header above.
+    </p>
+    <p>
+        To get started, click the "Sign up" button below.
+        (If you already have an account, just click the "Sign in" button instead).
+    </p>
+    <section class="tool-bar">
+        <button type=button hx-get="/signin">Sign in</button>
+        <button type=button hx-get="/signup">Sign up</button>
+    </section>
 {{end}}

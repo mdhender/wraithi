@@ -76,9 +76,10 @@ func anExample() {
 type userContextKey string
 
 func (a *App) adminOnly(h http.HandlerFunc) http.HandlerFunc {
+	nfh := a.notFound()
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !a.currentUser(r).IsAdmin() {
-			a.notFound(w, r)
+			nfh(w, r)
 			return
 		}
 		h.ServeHTTP(w, r)
@@ -86,9 +87,10 @@ func (a *App) adminOnly(h http.HandlerFunc) http.HandlerFunc {
 }
 
 func (a *App) authOnly(h http.HandlerFunc) http.HandlerFunc {
+	nfh := a.notFound()
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !a.currentUser(r).IsAuthenticated() {
-			a.notFound(w, r)
+			nfh(w, r)
 			return
 		}
 		h.ServeHTTP(w, r)
@@ -96,10 +98,11 @@ func (a *App) authOnly(h http.HandlerFunc) http.HandlerFunc {
 }
 
 func (a *App) mustAuth() Adapter {
+	nfh := a.notFound()
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !a.currentUser(r).IsAuthenticated() {
-				a.notFound(w, r)
+				nfh(w, r)
 				return
 			}
 			h.ServeHTTP(w, r)
@@ -127,57 +130,81 @@ func (a *App) withUser(h http.Handler) http.Handler {
 		var u User
 		// try to fetch the user from the request
 		if token := sessions.FromRequest(r, a.cookies.name); token == "" {
-			u.handle = "guest"
+			// the anonymous user
 		} else {
-			u.roles = UserRoles{authenticated: true, admin: true}
+			u.id, u.handle = "admin", "admin"
+			u.roles = []string{"authenticated", "admin"}
 		}
-		log.Printf("%s %s: user %q\n", r.Method, r.URL, u.handle)
+		// log.Printf("%s %s: user %q\n", r.Method, r.URL, u.handle)
 		ctx := context.WithValue(r.Context(), userContextKey("user"), u)
 		// serve with the user in the context
 		h.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// withUser injects a User into the request's Context.
-// It searches for a session token in the Bearer Token header first,
-// and then in a session cookie. If a valid token is found, the User
-// returned will have the appropriated roles added. If not, then the
-// "guest" User and its roles are used.
-func (a *App) withUserFunc(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var u User
-		// try to fetch the user from the request
-		if token := sessions.FromRequest(r, a.cookies.name); token == "" {
-			u.handle = "guest"
-		} else {
-			u.roles = UserRoles{authenticated: true, admin: true}
-		}
-		ctx := context.WithValue(r.Context(), userContextKey("user"), u)
-		// serve with the user in the context
-		h.ServeHTTP(w, r.WithContext(ctx))
-	}
-}
+//// withUserFunc injects a User into the request's Context.
+//// It searches for a session token in the Bearer Token header first,
+//// and then in a session cookie. If a valid token is found, the User
+//// returned will have the appropriated roles added. If not, then the
+//// "guest" User and its roles are used.
+//func (a *App) withUserFunc(h http.HandlerFunc) http.HandlerFunc {
+//	return func(w http.ResponseWriter, r *http.Request) {
+//		var u User
+//		// try to fetch the user from the request
+//		if token := sessions.FromRequest(r, a.cookies.name); token == "" {
+//			u.id, u.handle = "2", "guest"
+//			u.roles = map[string]bool{"guest": true}
+//		} else {
+//			u.id, u.handle = "1", "admin"
+//			u.roles = map[string]bool{"authenticated": true, "admin": true}
+//		}
+//		ctx := context.WithValue(r.Context(), userContextKey("user"), u)
+//		// serve with the user in the context
+//		h.ServeHTTP(w, r.WithContext(ctx))
+//	}
+//}
 
 type User struct {
+	id     string
 	handle string
-	roles  UserRoles
+	roles  []string
 }
-type UserRoles struct {
-	authenticated bool
-	admin         bool
+
+func (u User) HasRole(roles ...string) bool {
+	for _, want := range roles {
+		for _, got := range u.roles {
+			if got == want {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (u User) Id() string {
+	return u.id
 }
 
 func (u User) IsAdmin() bool {
-	return u.roles.authenticated && u.roles.admin
+	return u.HasRole("admin")
+}
+
+func (u User) IsAnonymous() bool {
+	return u.id == ""
 }
 
 func (u User) IsAuthenticated() bool {
-	return u.roles.authenticated
+	return u.HasRole("authenticated")
+}
+
+func (u User) IsGuest() bool {
+	return u.HasRole("guest")
 }
 
 // currentUser returns the User from the request's Context.
 // Returns the "guest" User if there is no User in the Context.
 func (a *App) currentUser(r *http.Request) User {
+	log.Printf("fix currentUser\n")
 	ctx := r.Context()
 	if u, ok := ctx.Value(userContextKey("user")).(User); ok {
 		return u
