@@ -1,6 +1,6 @@
 module github.com/mdhender/wraithi
 
-go 1.21.1
+go 1.24
 
 require (
 	github.com/go-sql-driver/mysql v1.7.1
@@ -15,7 +15,7 @@ require (
 	cloud.google.com/go/compute v1.20.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )
